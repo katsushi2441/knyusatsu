@@ -4,6 +4,20 @@
 
 公開: https://kurage.exbridge.jp/knyusatsu.php/
 
+## 置き方
+
+1. PHP 8.1 以上と SQLite（pdo_sqlite）が使えるレンタルサーバーに `php/` の中身を置く。`knyusatsu_data/` の `.htaccess` でデータは外から読めない（Apache の場合）。`SITE` / `BASE` 定数を自分の URL に変える。
+2. データを組む手元のサーバー（Python 3.10 以上・標準ライブラリだけ）に `scripts/` を置き、リポジトリ直下に `.env` を作る：
+
+```
+FTP_HOST=ftp.example.com
+FTP_USER=...
+FTP_PASS=...
+REMOTE_DIR=/web/example_com/knyusatsu_data
+```
+
+3. cron で1日1回 `python3 scripts/update.py` を回す（新しいデータがあるときだけ組み直して FTPS で置く）。
+
 ## 構成
 
 - `scripts/collect.py` … 検索APIから都道府県×期間で取り込み、`data/knyusatsu.sqlite` に貯める（1,000件の上限に当たった区間は日を割って取り直す。1.2秒あけて1日1回）
