@@ -14,15 +14,19 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REMOTE = "/web/kurage_exbridge_jp/knyusatsu_data"
+# 置き先（FTP の接続先と、サーバー上のデータのフォルダ）は環境変数か、このリポジトリ直下の .env で渡す:
+#   FTP_HOST / FTP_USER / FTP_PASS / REMOTE_DIR（例 /web/example_com/<製品>_data）。ENV_FILE で .env の場所を変えられる
+REMOTE = os.environ.get("REMOTE_DIR", "")
 
 
 def env():
-    e = {}
-    for ln in open("/home/kojima/work/aixec/.env", encoding="utf-8"):
-        if ln.startswith("FTP_") and "=" in ln:
-            k, v = ln.rstrip("\n").split("=", 1)
-            e[k] = v.strip().strip('"').strip("'")
+    e = {k: v for k, v in os.environ.items() if k.startswith("FTP_") or k == "REMOTE_DIR"}
+    path = os.environ.get("ENV_FILE", os.path.join(ROOT, ".env"))
+    if os.path.exists(path):
+        for ln in open(path, encoding="utf-8"):
+            if (ln.startswith("FTP_") or ln.startswith("REMOTE_DIR")) and "=" in ln:
+                k, v = ln.rstrip("\n").split("=", 1)
+                e.setdefault(k, v.strip().strip('"').strip("'"))
     return e
 
 
@@ -36,12 +40,15 @@ def main() -> dict:
         return res
     subprocess.run([py, os.path.join(ROOT, "scripts", "export.py")], capture_output=True, text=True, timeout=600, check=True)
     e = env()
+    rd = e.get("REMOTE_DIR") or REMOTE
+    if not rd:
+        raise SystemExit("REMOTE_DIR（サーバー上のデータのフォルダ）を環境変数か .env で指定してください")
     f = ftplib.FTP_TLS(e["FTP_HOST"], timeout=300)
     f.login(e["FTP_USER"], e["FTP_PASS"])
     f.prot_p()
     with open(os.path.join(ROOT, "php", "knyusatsu_data", "knyusatsu.sqlite"), "rb") as fh:
-        f.storbinary(f"STOR {REMOTE}/knyusatsu.sqlite.tmp", fh, blocksize=1 << 18)
-    f.rename(f"{REMOTE}/knyusatsu.sqlite.tmp", f"{REMOTE}/knyusatsu.sqlite")
+        f.storbinary(f"STOR {rd}/knyusatsu.sqlite.tmp", fh, blocksize=1 << 18)
+    f.rename(f"{rd}/knyusatsu.sqlite.tmp", f"{rd}/knyusatsu.sqlite")
     f.quit()
     res["deployed"] = True
     return res
