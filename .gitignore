@@ -1,0 +1,4 @@
+data/
+outputs/
+php/knyusatsu_data/*.sqlite*
+__pycache__/
