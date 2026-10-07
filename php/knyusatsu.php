@@ -145,7 +145,7 @@ if (($seg[0] ?? '') === 'o' && isset($seg[1]) && preg_match('/^[0-9a-f]{10}$/', 
     foreach ($rows as $r) { if ($r['category']) { $cat[$r['category']] = ($cat[$r['category']] ?? 0) + 1; } }
     $title = $o['name'] . 'の入札情報・入札公告一覧（直近' . $o['n'] . '件）';
     $desc = $o['name'] . 'が官公需情報ポータルサイトに出した入札公告' . $o['n'] . '件（最新 ' . jd($o['latest']) . '）を新しい順に一覧。件名・公告日・分類と、元の公告へのリンク。';
-    $body = '<h1>' . h($o['name']) . 'の入札公告</h1><p class="lead">' . h($pn) . '・直近120日に官公需情報ポータルサイトへ登録された入札公告 <b>' . (int)$o['n'] . '件</b>（最新 ' . jd($o['latest']) . '）' . ($cat ? '。分類：' . h(implode('・', array_map(fn($k, $v) => "$k $v件", array_keys($cat), $cat))) : '') . '</p>';
+    $body = '<h1>' . h($o['name']) . 'の入札公告</h1><p class="lead">' . h($pn) . '・直近120日に官公需情報ポータルサイトへ登録された入札公告 <b>' . (int)$o['n'] . '件</b>（最新 ' . jd($o['latest']) . '）' . ($cat ? '。分類：' . h(implode('・', array_map(fn($k, $v) => "{$k} {$v}件", array_keys($cat), $cat))) : '') . '</p>';
     $body .= cases_html($rows, false);
     $sib = q('SELECT id, name, n FROM orgs WHERE pref_code=? AND id<>? ORDER BY n DESC LIMIT 18', [$o['pref_code'], $o['id']]);
     if ($sib) { $body .= '<h2>' . h($pn) . 'のほかの発注機関</h2><div class="grid">' . implode('', array_map(fn($s) => '<a href="' . u('/o/' . $s['id'] . '/') . '"><b>' . h($s['name']) . '</b><small>' . (int)$s['n'] . '件</small></a>', $sib)) . '<a href="' . u('/p/' . pc((string)$o['pref_code']) . '/') . '"><b>' . h($pn) . 'の一覧</b><small>発注機関と新着</small></a></div>'; }
